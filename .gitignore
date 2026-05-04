@@ -7,4 +7,8 @@ cmake-build-*/
 .idea/
 *.swp
 index/*.idx
+<<<<<<< HEAD
 .DS_Store
+=======
+.DS_Store
+>>>>>>> 9ef3163224cade958aa281d74d201e48512bff13
