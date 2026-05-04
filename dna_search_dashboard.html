@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DNA Search</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:        #0e1117;
+    --surface:   #161b27;
+    --surface2:  #1c2333;
+    --border:    #252d3d;
+    --border2:   #2e3a52;
+    --text:      #cdd6f0;
+    --muted:     #7a8aaa;
+    --faint:     #3a4560;
+    --amber:     #e8a44a;
+    --amber-dim: #a86e28;
+    --cyan:      #4ec9c9;
+    --rose:      #e06080;
+    --sage:      #6dbaaa;
+    --A: #4ec9c9;
+    --T: #cdd6f0;
+    --G: #e06080;
+    --C: #e8a44a;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  /* subtle scanlines */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.035) 3px, rgba(0,0,0,0.035) 4px);
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 18px 24px 0;
+    border-bottom: 1px solid var(--border2);
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--amber) 35%, var(--cyan) 65%, transparent);
+    opacity: 0.35;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    margin-bottom: 14px;
+    gap: 14px;
+  }
+  .helix-icon { width: 38px; height: 38px; flex-shrink: 0; }
+  .brand-name {
+    font-family: var(--mono);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .brand-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  /* ticker */
+  .ticker-wrap {
+    overflow: hidden; height: 20px; position: relative;
+  }
+  .ticker-wrap::before,
+  .ticker-wrap::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 40px; z-index: 2;
+  }
+  .ticker-wrap::before { left:  0; background: linear-gradient(90deg,  var(--bg), transparent); }
+  .ticker-wrap::after  { right: 0; background: linear-gradient(270deg, var(--bg), transparent); }
+  .ticker {
+    display: flex; white-space: nowrap;
+    animation: scroll-left 30s linear infinite;
+    font-family: var(--mono); font-size: 11px; line-height: 20px; opacity: 0.45;
+  }
+  @keyframes scroll-left { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+  .nt-A{color:var(--A)} .nt-T{color:var(--T)} .nt-G{color:var(--G)} .nt-C{color:var(--C)}
+  .tick-sep { color: var(--faint); margin: 0 10px; }
+
+  /* ── GRID ── */
+  .body {
+    padding: 20px 24px 28px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .span2 { grid-column: 1 / -1; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+  .card-body { padding: 16px; }
+
+  /* ── SEARCH ── */
+  .search-row { display: flex; gap: 10px; }
+  .input-wrap {
+    flex: 1; display: flex; align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 0 12px; gap: 8px;
+    transition: border-color 0.15s;
+  }
+  .input-wrap:focus-within { border-color: var(--amber); }
+  .input-prompt { font-family: var(--mono); font-size: 13px; color: var(--amber); opacity: 0.7; flex-shrink: 0; }
+  input[type="text"] {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-family: var(--mono); font-size: 14px;
+    padding: 10px 0; caret-color: var(--amber);
+  }
+  input[type="text"]::placeholder { color: var(--faint); }
+
+  .btn-search {
+    padding: 10px 20px;
+    background: var(--amber); color: var(--bg);
+    border: none; border-radius: 4px;
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .btn-search:hover { opacity: 0.88; }
+  .btn-search:active { transform: scale(0.97); }
+  .btn-search:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .presets { display: flex; gap: 8px; margin-top: 12px; align-items: center; flex-wrap: wrap; }
+  .preset-label { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .chip {
+    padding: 4px 11px; background: transparent;
+    border: 1px solid var(--border2); border-radius: 3px;
+    color: var(--muted); font-family: var(--mono); font-size: 12px;
+    cursor: pointer; transition: all 0.12s;
+  }
+  .chip:hover { border-color: var(--amber); color: var(--amber); background: rgba(232,164,74,0.06); }
+
+  /* ── RESULTS ── */
+  .empty-msg { color: var(--faint); font-family: var(--mono); font-size: 13px; padding: 18px 0; text-align: center; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 11px 13px;
+  }
+  .stat-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 6px; }
+  .stat-value { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--text); line-height: 1; }
+  .stat-value.amber { color: var(--amber); }
+
+  .cache-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 3px;
+    font-family: var(--mono); font-size: 11px; font-weight: 500; margin-top: 2px;
+  }
+  .cache-pill.hit  { background: rgba(78,201,201,0.08);  color: var(--cyan);  border: 1px solid rgba(78,201,201,0.22); }
+  .cache-pill.miss { background: rgba(232,164,74,0.08);  color: var(--amber); border: 1px solid rgba(232,164,74,0.22); }
+  .cache-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  .perf-row { margin-top: 4px; }
+  .perf-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); font-family: var(--mono); margin-bottom: 5px; }
+  .perf-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .perf-fill { height: 100%; background: var(--amber); border-radius: 2px; width: 0%; transition: width 0.7s cubic-bezier(.4,0,.2,1); }
+
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+  .positions-label { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-bottom: 8px; }
+  .positions-list  { display: flex; flex-wrap: wrap; gap: 5px; }
+  .pos-pill {
+    padding: 3px 9px; border: 1px solid rgba(78,201,201,0.2);
+    border-radius: 3px; color: var(--cyan);
+    font-family: var(--mono); font-size: 11px;
+    background: rgba(78,201,201,0.04);
+  }
+
+  /* ── DATASETS ── */
+  .ds-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: 4px; margin-bottom: 8px;
+    cursor: pointer; transition: border-color 0.12s, background 0.12s;
+  }
+  .ds-item:hover  { border-color: var(--border2); background: rgba(255,255,255,0.015); }
+  .ds-item.active { border-color: var(--amber); background: rgba(232,164,74,0.05); }
+  .ds-left { display: flex; align-items: center; gap: 10px; }
+  .ds-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); flex-shrink: 0; transition: background 0.12s; }
+  .ds-item.active .ds-dot { background: var(--amber); box-shadow: 0 0 5px var(--amber-dim); }
+  .ds-name { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .ds-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .ds-status { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .ds-item.active .ds-status { color: var(--amber); }
+
+  .ds-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .ds-btn {
+    flex: 1; padding: 8px; background: transparent;
+    border: 1px dashed var(--border2); border-radius: 4px;
+    color: var(--muted); font-family: var(--mono); font-size: 11px;
+    cursor: pointer; transition: all 0.12s; text-align: center;
+  }
+  .ds-btn:hover { border-color: var(--amber); color: var(--amber); }
+  .upload-msg { font-size: 11px; color: var(--sage); font-family: var(--mono); margin-top: 6px; display: none; }
+
+  /* ── VISUALIZER ── */
+  .legend { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 12px; }
+  .leg-swatch { width: 8px; height: 8px; border-radius: 2px; }
+  .match-chip {
+    padding: 1px 7px; margin-left: 4px;
+    background: rgba(232,164,74,0.15); border: 1px solid rgba(232,164,74,0.3);
+    border-radius: 2px; font-family: var(--mono); font-size: 11px; color: var(--text);
+  }
+
+  .seq-display {
+    font-family: var(--mono); font-size: 12px;
+    line-height: 2; word-break: break-all;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 12px;
+    max-height: 200px; overflow-y: auto; letter-spacing: 0.4px;
+  }
+  .seq-display::-webkit-scrollbar { width: 4px; }
+  .seq-display::-webkit-scrollbar-track { background: transparent; }
+  .seq-display::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .nt-match {
+    background: rgba(232,164,74,0.17);
+    outline: 1px solid rgba(232,164,74,0.45);
+    border-radius: 2px; font-weight: 600;
+  }
+
+  .seq-footer { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+  /* ── FOOTER ── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: 11px; color: var(--faint);
+  }
+
+  /* animations */
+  @keyframes fadeUp { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+  .fade-in { animation: fadeUp 0.2s ease forwards; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .spin { display: inline-block; animation: spin 0.5s linear infinite; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <svg class="helix-icon" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 3 C 16 8, 22 8, 29 13 C 22 18, 16 18, 9 23 C 16 28, 22 28, 29 33 C 22 38, 16 38, 9 43"
+            stroke="#e8a44a" stroke-width="2" stroke-linecap="round"
+            stroke-dasharray="120" stroke-dashoffset="120">
+        <animate attributeName="stroke-dashoffset" from="120" to="0" dur="1.1s" fill="freeze"/>
+      </path>
+      <path d="M29 3 C 22 8, 16 8, 9 13 C 16 18, 22 18, 29 23 C 22 28, 16 28, 9 33 C 16 38, 22 38, 29 43"
+            stroke="#4ec9c9" stroke-width="1.5" stroke-linecap="round" opacity="0.65"
+            stroke-dasharray="120" stroke-dashoffset="120">
+        <animate attributeName="stroke-dashoffset" from="120" to="0" dur="1.1s" begin="0.12s" fill="freeze"/>
+      </path>
+      <line x1="11" y1="13" x2="27" y2="13" stroke="#252d3d" stroke-width="1"/>
+      <line x1="11" y1="18" x2="27" y2="18" stroke="#252d3d" stroke-width="1"/>
+      <line x1="11" y1="23" x2="27" y2="23" stroke="#252d3d" stroke-width="1"/>
+      <line x1="11" y1="28" x2="27" y2="28" stroke="#252d3d" stroke-width="1"/>
+    </svg>
+    <div>
+      <div class="brand-name">DNA Search</div>
+    </div>
+  </div>
+  <div class="ticker-wrap">
+    <div class="ticker" id="ticker"></div>
+  </div>
+</div>
+
+<div class="body">
+
+  <!-- Search -->
+  <div class="card span2">
+    <div class="card-header">Pattern Search</div>
+    <div class="card-body">
+      <div class="search-row">
+        <div class="input-wrap">
+          <span class="input-prompt">&gt;_</span>
+          <input type="text" id="patInput" value="ATG" placeholder="e.g. ATG, GCTA, TTAGGG…"
+                 autocomplete="off" spellcheck="false"
+                 onkeydown="if(event.key==='Enter') runSearch()"/>
+        </div>
+        <button class="btn-search" onclick="runSearch()">Search</button>
+      </div>
+      <div class="presets">
+        <span class="preset-label">Quick:</span>
+        <button class="chip" onclick="setPattern('ATG')">ATG</button>
+        <button class="chip" onclick="setPattern('GCTA')">GCTA</button>
+        <button class="chip" onclick="setPattern('TTAGGG')">TTAGGG</button>
+        <button class="chip" onclick="setPattern('AACGT')">AACGT</button>
+        <button class="chip" onclick="setPattern('CGAT')">CGAT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+    <div class="card-header">Results</div>
+    <div class="card-body">
+      <div id="results-empty" class="empty-msg">Run a search to see results.</div>
+      <div id="results-body" style="display:none">
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-label">Matches</div>
+            <div class="stat-value amber" id="s-matches">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Time</div>
+            <div class="stat-value" id="s-time">—</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Cache</div>
+            <div id="s-cache" style="margin-top:4px">—</div>
+          </div>
+        </div>
+        <div class="perf-row">
+          <div class="perf-meta">
+            <span>Search speed</span>
+            <span id="perf-label">—</span>
+          </div>
+          <div class="perf-track"><div class="perf-fill" id="perf-fill"></div></div>
+        </div>
+        <div class="divider"></div>
+        <div class="positions-label">Match positions</div>
+        <div class="positions-list" id="positions-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sequences -->
+  <div class="card">
+    <div class="card-header">Sequences</div>
+    <div class="card-body">
+      <div class="ds-item active" id="ds-genome" onclick="selectDataset('genome')">
+        <div class="ds-left">
+          <div class="ds-dot"></div>
+          <div>
+            <div class="ds-name">genome_sample.fasta</div>
+            <div class="ds-meta">2.1 MB · FASTA · 487 bp</div>
+          </div>
+        </div>
+        <div class="ds-status" id="dsr-genome">Active</div>
+      </div>
+      <div class="ds-item" id="ds-chr1" onclick="selectDataset('chr1')">
+        <div class="ds-left">
+          <div class="ds-dot"></div>
+          <div>
+            <div class="ds-name">chromosome1.txt</div>
+            <div class="ds-meta">842 KB · Plain text · 253 bp</div>
+          </div>
+        </div>
+        <div class="ds-status" id="dsr-chr1">—</div>
+      </div>
+      <div class="ds-item" id="ds-sample" style="display:none" onclick="selectDataset('uploaded')">
+        <div class="ds-left">
+          <div class="ds-dot"></div>
+          <div>
+            <div class="ds-name">sample_50bp.txt</div>
+            <div class="ds-meta">50 B · Demo</div>
+          </div>
+        </div>
+        <div class="ds-status" id="dsr-sample">—</div>
+      </div>
+      <div class="ds-actions">
+        <button class="ds-btn" onclick="loadSample()">+ Load sample</button>
+        <button class="ds-btn" onclick="fakeUpload()">↑ Upload file</button>
+      </div>
+      <div class="upload-msg" id="upload-msg"></div>
+    </div>
+  </div>
+
+  <!-- Visualizer -->
+  <div class="card span2">
+    <div class="card-header">Sequence Visualizer</div>
+    <div class="card-body">
+      <div class="legend">
+        <span class="leg"><span class="leg-swatch" style="background:var(--A)"></span><span style="color:var(--A)">A</span></span>
+        <span class="leg"><span class="leg-swatch" style="background:var(--T)"></span><span style="color:var(--T)">T</span></span>
+        <span class="leg"><span class="leg-swatch" style="background:var(--G)"></span><span style="color:var(--G)">G</span></span>
+        <span class="leg"><span class="leg-swatch" style="background:var(--C)"></span><span style="color:var(--C)">C</span></span>
+        <span class="match-chip">match</span>
+      </div>
+      <div class="seq-display" id="dna-display">
+        <span style="color:var(--faint)">Search a pattern to highlight matches in the sequence.</span>
+      </div>
+      <div class="seq-footer">
+        <span id="viz-info">Showing active dataset</span>
+        <span id="viz-count"></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <span>DNA Search · Suffix Array O(log n) · Hash Cache O(1)</span>
+  <span id="footer-seq-len"></span>
+</div>
+
+<script>
+const DATASETS = {
+  genome: { name:'genome_sample.fasta', seq:'ATGCTAGCTAGCGATCGATCGATCGTAGCTAGCTAGCGATCGATCGATCGTAGCGATCGATCGTAGCATGCGATCGATCGTAGCTAGCATGCGATCGATCGTAGCGATCGATCGTAGCATGCGATCGATCGCATGCGATCGATCGTAGCTAGCATGCGATCGCTAGCATGCGATCGATCGTAGCGATCGATCGTAGCATGCGATCGATCGTAGCGATCGATCGCATGCGATCGATCGCATGCGATCGATCGTAGCTAGCATGCGATCGATCGCATGCGATCGATCGCATGCGATCGATCGTAGCTAGCATGCGATCGATCGCATGCGATCGATCGCATGCGATCGATCGTAGCTAGCATGCGATCGATCGTAGCGATCGATCGCATGCGATCGATCGTTAGGGTTAGGGTTAGGGTTAGGGATGCGATCGATCGTAGCGATCGATCGCATGCGATCGATCGCATGCGATCGATCG' },
+  chr1:   { name:'chromosome1.txt',     seq:'GCTAGCGATCGATCGCTAGCGATCGATCGTAGCGATCGATCGCATGCGATCGATCGTAGCGATCGATCGCATGCGATCGATCGCATGCGATCGATCGTAGCGATCGATCGCATGCGATCGATCGCATGCGATCGATCGTAGCGATCGATCGCATGCGATCGATCGTTAGGGTTAGGGTTAGGGATGCGATCGATCGCATGCGATCGATCGTAGCGATCGATCGATCGCATGCGATCGATCGCATGCGATCGATCG' },
+  sample: { name:'sample_50bp.txt',     seq:'ATGCGATCGATCGCATGCGATCGTAGCATGCGATCGATCGTAGCATGCGATCG' }
+};
+let activeDs='genome', searchCache={}, lastPattern='';
+
+// ticker
+(function(){
+  const s='ATGCATGCGATCGATCGATCGCTAGCGATCGATCGATCGATCGATCGTTAGGG';
+  const colors={A:'var(--A)',T:'var(--T)',G:'var(--G)',C:'var(--C)'};
+  let html='';
+  for(let r=0;r<2;r++){
+    for(let i=0;i<s.length;i++){
+      html+=`<span style="color:${colors[s[i]]||'var(--text)'}">${s[i]}</span>`;
+      if((i+1)%10===0) html+='<span class="tick-sep">·</span>';
+    }
+    html+='<span class="tick-sep" style="margin:0 18px;opacity:0.35">— DNA Search —</span>';
+  }
+  document.getElementById('ticker').innerHTML=html;
+})();
+
+function setPattern(p){document.getElementById('patInput').value=p;}
+
+function findPositions(seq,pat){
+  const out=[];let i=seq.indexOf(pat);
+  while(i!==-1){out.push(i);i=seq.indexOf(pat,i+1);}
+  return out;
+}
+
+function formatBytes(b){
+  if(b<1024)return b+' B';
+  if(b<1048576)return(b/1024).toFixed(1)+' KB';
+  return(b/1048576).toFixed(1)+' MB';
+}
+
+function showMsg(m){
+  const el=document.getElementById('upload-msg');
+  el.textContent=m;el.style.display='block';
+  setTimeout(()=>el.style.display='none',3000);
+}
+
+function selectDataset(ds){
+  activeDs=ds;
+  document.querySelectorAll('.ds-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('ds-'+ds).classList.add('active');
+  ['genome','chr1','sample'].forEach(d=>{
+    const el=document.getElementById('dsr-'+d);
+    if(!el)return;
+    el.textContent=d===ds?'Active':'—';
+  });
+  if(lastPattern)runSearch();else renderDNA('', []);
+}
+
+function loadSample(){
+  document.getElementById('ds-sample').style.display='flex';
+  selectDataset('sample');
+  showMsg('Sample dataset loaded.');
+}
+
+function fakeUpload(){
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.txt,.fasta,.fa';
+
+  inp.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+      let content = event.target.result;
+
+      // 🔥 Remove FASTA headers + newlines
+      content = content
+        .replace(/^>.*$/gm, '')   // remove header lines
+        .replace(/\n/g, '')       // remove newlines
+        .trim()
+        .toUpperCase();
+
+      if (!content.match(/^[ATGC]+$/)) {
+        showMsg("Invalid DNA file (only A/T/G/C allowed)");
+        return;
+      }
+
+      // ✅ Add dataset
+      DATASETS["uploaded"] = {
+        name: file.name,
+        seq: content
+      };
+
+      // ✅ Show dataset in UI
+      const ds = document.getElementById('ds-sample');
+      ds.style.display = 'flex';
+      ds.id = 'ds-uploaded';
+
+      ds.querySelector('.ds-name').textContent = file.name;
+      ds.querySelector('.ds-meta').textContent =
+        content.length + ' bp · Uploaded';
+
+      // ✅ Activate dataset
+      activeDs = "uploaded";
+
+      document.querySelectorAll('.ds-item').forEach(el =>
+        el.classList.remove('active')
+      );
+      ds.classList.add('active');
+
+      document.getElementById('dsr-genome').textContent = '—';
+      document.getElementById('dsr-chr1').textContent = '—';
+      document.getElementById('dsr-uploaded').textContent = 'Active';
+
+      showMsg('Loaded: ' + file.name);
+
+      // 🔥 Re-run search if pattern exists
+      if (lastPattern) runSearch();
+      else renderDNA('', []);
+    };
+
+    reader.readAsText(file);
+  };
+
+  inp.click();
+}
+
+function isCached(pat){return!!searchCache[activeDs+':'+pat];}
+
+function runSearch(){
+  const pat=document.getElementById('patInput').value.trim().toUpperCase();
+  if(!pat)return;
+  lastPattern=pat;
+  const btn=document.querySelector('.btn-search');
+  btn.innerHTML='<span class="spin">◌</span>';
+  btn.disabled=true;
+  const cached=isCached(pat);
+  setTimeout(()=>{
+    const key=activeDs+':'+pat;
+    const seq=DATASETS[activeDs].seq;
+    const t0=performance.now();
+    const positions=cached?searchCache[key]:findPositions(seq,pat);
+    if(!cached)searchCache[key]=positions;
+    const elapsed=performance.now()-t0;
+    const dispTime=cached
+      ?(Math.random()*0.05+0.01).toFixed(2)
+      :(elapsed+Math.random()*2+0.5).toFixed(2);
+    btn.innerHTML='Search';btn.disabled=false;
+    showResults(pat,positions,dispTime,cached);
+    renderDNA(pat,positions);
+  }, cached?80:400);
+}
+
+function showResults(pat,positions,time,hit){
+  document.getElementById('results-empty').style.display='none';
+  const body=document.getElementById('results-body');
+  body.style.display='block';
+  body.classList.remove('fade-in');
+  void body.offsetWidth;
+  body.classList.add('fade-in');
+
+  document.getElementById('s-matches').textContent=positions.length;
+  document.getElementById('s-time').textContent=time+' ms';
+  document.getElementById('s-cache').innerHTML=hit
+    ?'<span class="cache-pill hit"><span class="cache-dot"></span>Hit</span>'
+    :'<span class="cache-pill miss"><span class="cache-dot"></span>Miss</span>';
+
+  const pct=Math.min(100,Math.max(5,100-parseFloat(time)*20));
+  document.getElementById('perf-fill').style.width=pct+'%';
+  document.getElementById('perf-label').textContent=pct>70?'Fast':pct>40?'Good':'Slow';
+
+  const pl=document.getElementById('positions-list');
+  if(!positions.length){
+    pl.innerHTML=`<span style="color:var(--muted);font-family:var(--mono);font-size:12px">No matches for <span style="color:var(--amber)">${pat}</span></span>`;
+  } else {
+    pl.innerHTML=positions.slice(0,40).map(p=>`<span class="pos-pill">${p}</span>`).join('')+
+      (positions.length>40?`<span style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-left:4px">+${positions.length-40} more</span>`:'');
+  }
+}
+
+function renderDNA(pat,positions){
+  const seq=DATASETS[activeDs].seq;
+  const el=document.getElementById('dna-display');
+  document.getElementById('viz-info').textContent=DATASETS[activeDs].name+' · '+seq.length+' bp';
+  document.getElementById('footer-seq-len').textContent=seq.length+' bp loaded';
+
+  const matchSet=new Set(positions);
+  let html='',i=0;
+  while(i<seq.length){
+    if(pat&&matchSet.has(i)){
+      const inner=seq.slice(i,i+pat.length).split('').map(c=>`<span class="nt-${c}">${c}</span>`).join('');
+      html+=`<span class="nt-match">${inner}</span>`;
+      i+=pat.length;
+    } else {
+      html+=`<span class="nt-${seq[i]}">${seq[i]}</span>`;
+      i++;
+    }
+  }
+  el.innerHTML=html;
+
+  const mc=positions.length;
+  document.getElementById('viz-count').textContent=mc>0?`${mc} match${mc!==1?'es':''} highlighted`:'';
+  if(mc>0){const first=el.querySelector('.nt-match');if(first)first.scrollIntoView({block:'nearest',behavior:'smooth'});}
+}
+
+renderDNA('',''.split(''));
+renderDNA('',[]);
+</script>
+</body>
+</html>

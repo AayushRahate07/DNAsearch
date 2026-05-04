@@ -20,40 +20,52 @@ else()
     add_compile_options(-Wall -Wextra -O2)
 endif()
 
-set(SOURCES
-    src/main.cpp
-    src/kmp.cpp
-    src/bm.cpp
+# ── COMMON SOURCES (added for consistency) ──────────────────────────────────
+set(COMMON_SOURCES
     src/mmap_reader.cpp
     src/suffix_array.cpp
     src/hash_cache.cpp
-    src/input.cpp
-    src/output.cpp
+    src/segment_tree.cpp
 )
 
-add_executable(dna_search ${SOURCES})
+# ── MAIN EXECUTABLE ─────────────────────────────────────────────────────────
+add_executable(dna_search
+    src/main.cpp
+    src/input.cpp
+    src/output.cpp
+    ${COMMON_SOURCES}
+)
 
 if(UNIX AND NOT APPLE)
     target_link_libraries(dna_search m)
 endif()
 
+# ── TESTS ───────────────────────────────────────────────────────────────────
 set(TEST_SHARED_SOURCES
-    src/kmp.cpp
-    src/bm.cpp
-    src/mmap_reader.cpp
-    src/suffix_array.cpp
-    src/hash_cache.cpp
-    src/output.cpp
     src/input.cpp
+    src/output.cpp
+    ${COMMON_SOURCES}
 )
 
-add_executable(test_kmp          tests/test_kmp.cpp          ${TEST_SHARED_SOURCES})
-add_executable(test_bm           tests/test_bm.cpp           ${TEST_SHARED_SOURCES})
 add_executable(test_suffix_array tests/test_suffix_array.cpp ${TEST_SHARED_SOURCES})
 add_executable(test_cache        tests/test_cache.cpp        ${TEST_SHARED_SOURCES})
 
 enable_testing()
-add_test(NAME KMP         COMMAND test_kmp)
-add_test(NAME BoyerMoore  COMMAND test_bm)
 add_test(NAME SuffixArray COMMAND test_suffix_array)
 add_test(NAME Cache       COMMAND test_cache)
+
+# ── DNA HTTP SERVER ─────────────────────────────────────────────────────────
+add_executable(dna_server
+    src/server.cpp
+    ${COMMON_SOURCES}
+)
+
+target_include_directories(dna_server PRIVATE src)
+
+if(WIN32)
+    target_link_libraries(dna_server ws2_32)
+endif()
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(dna_server m)
+endif()
