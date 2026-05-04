@@ -1,0 +1,80 @@
+Start testing: May 04 01:27 India Standard Time
+----------------------------------------------------------
+1/4 Testing: KMP
+1/4 Test: KMP
+Command: "C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build/bin/test_kmp.exe"
+Directory: C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build
+"KMP" start time: May 04 01:27 India Standard Time
+Output:
+----------------------------------------------------------
+=== KMP Tests (DNA) ===
+  [PASS] nucleotide pattern found at offset 3
+  [PASS] absent pattern returns empty
+  [PASS] start codon ATG found 3 times
+All KMP tests passed.
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"KMP" end time: May 04 01:27 India Standard Time
+"KMP" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/4 Testing: BoyerMoore
+2/4 Test: BoyerMoore
+Command: "C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build/bin/test_bm.exe"
+Directory: C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build
+"BoyerMoore" start time: May 04 01:27 India Standard Time
+Output:
+----------------------------------------------------------
+=== Boyer-Moore Tests (DNA) ===
+  [PASS] long pattern search completed, 1 match(es)
+  [PASS] mutated pattern correctly not found
+All BM tests passed.
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"BoyerMoore" end time: May 04 01:27 India Standard Time
+"BoyerMoore" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/4 Testing: SuffixArray
+3/4 Test: SuffixArray
+Command: "C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build/bin/test_suffix_array.exe"
+Directory: C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build
+"SuffixArray" start time: May 04 01:27 India Standard Time
+Output:
+----------------------------------------------------------
+=== Suffix Array Tests (DNA) ===
+  [PASS] start codon ATG found 3 times via suffix array
+  [PASS] absent nucleotide pattern returns empty
+All Suffix Array tests passed.
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"SuffixArray" end time: May 04 01:27 India Standard Time
+"SuffixArray" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/4 Testing: Cache
+4/4 Test: Cache
+Command: "C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build/bin/test_cache.exe"
+Directory: C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build
+"Cache" start time: May 04 01:27 India Standard Time
+Output:
+----------------------------------------------------------
+=== Hash Cache Tests (DNA) ===
+  [PASS] cached nucleotide pattern retrieved correctly
+  [PASS] uncached pattern returns nullptr
+All Cache tests passed.
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"Cache" end time: May 04 01:27 India Standard Time
+"Cache" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: May 04 01:27 India Standard Time

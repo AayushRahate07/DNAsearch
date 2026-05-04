@@ -1,0 +1,5 @@
+KMP 1 0.130451
+BoyerMoore 1 0.130929
+SuffixArray 1 0.129357
+Cache 1 0.134024
+---

@@ -1,0 +1,7 @@
+C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build/CMakeFiles/dna_search.dir
+C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build/CMakeFiles/test_suffix_array.dir
+C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build/CMakeFiles/test_cache.dir
+C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build/CMakeFiles/dna_server.dir
+C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build/CMakeFiles/test.dir
+C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build/CMakeFiles/edit_cache.dir
+C:/Users/Aayush/OneDrive/Desktop/SY/SEM 4/ADS/DNAsearch/build/CMakeFiles/rebuild_cache.dir
